@@ -1,11 +1,18 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { AIProvider } from "./aiProvider.interface.js";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
-
 export class GeminiProvider implements AIProvider {
+  private genAI: GoogleGenerativeAI | null = null;
+
+  private getClient(): GoogleGenerativeAI {
+    if (!this.genAI) {
+      this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!);
+    }
+    return this.genAI;
+  }
+
   async generateText(prompt: string, maxTokens: number) {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = this.getClient().getGenerativeModel({ model: "gemini-1.5-flash" });
     const result = await model.generateContent({
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       generationConfig: { maxOutputTokens: maxTokens },
@@ -14,7 +21,7 @@ export class GeminiProvider implements AIProvider {
   }
 
   async *streamChat(messages: { role: string; content: string }[]) {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const model = this.getClient().getGenerativeModel({ model: "gemini-1.5-flash" });
     const contents = messages.map((m) => ({
       role: m.role === "assistant" ? "model" : "user",
       parts: [{ text: m.content }],
