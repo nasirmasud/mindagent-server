@@ -9,7 +9,7 @@ export interface IMessage {
 export interface IChatSession extends Document {
   userId: mongoose.Types.ObjectId;
   agentType: string;
-  messages: I[];
+  messages: IMessage[];
 }
 
 const MessageSchema = new Schema<IMessage>({
