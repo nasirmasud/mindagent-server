@@ -7,7 +7,7 @@ export interface IUser extends Document {
   authProvider: "email" | "google";
   googleId?: string;
   avatar?: string;
-  preferredProvider: "groq" | "gemini";
+  preferredProvider: "openrouter";
   createdAt: Date;
 }
 
@@ -18,7 +18,7 @@ const UserSchema = new Schema<IUser>({
   authProvider: { type: String, enum: ["email", "google"], required: true },
   googleId: { type: String },
   avatar: { type: String },
-  preferredProvider: { type: String, enum: ["groq", "gemini"], default: "groq" },
+  preferredProvider: { type: String, enum: ["openrouter"], default: "openrouter" },
   createdAt: { type: Date, default: Date.now },
 });
 

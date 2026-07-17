@@ -27,8 +27,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     try {
       const data = generateContentSchema.parse(req.body);
-      const provider = data.provider || "gemini";
-      const ai = getAIProvider(provider);
+      const ai = getAIProvider();
 
       const template = PROMPT_TEMPLATES[data.contentType];
       const maxTokens = LENGTH_MAP[data.length];
@@ -44,10 +43,10 @@ router.post(
         prompt,
         output,
         contentType: data.contentType,
-        provider,
+        provider: "openrouter",
       });
 
-      res.json({ success: true, content: output, providerUsed: provider });
+      res.json({ success: true, content: output, providerUsed: "openrouter" });
     } catch (err: any) {
       if (err.name === "ZodError") {
         res.status(400).json({ success: false, errors: err.errors });
@@ -66,8 +65,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     try {
       const data = chatSchema.parse(req.body);
-      const provider = data.provider || "gemini";
-      const ai = getAIProvider(provider);
+      const ai = getAIProvider();
 
       let session = data.sessionId
         ? await ChatSession.findById(data.sessionId)
@@ -101,6 +99,7 @@ router.post(
       res.setHeader("Connection", "keep-alive");
 
       let fullResponse = "";
+      let streamOk = false;
 
       try {
         const generator = ai.streamChat(history);
@@ -108,9 +107,18 @@ router.post(
           fullResponse += chunk;
           res.write(`data: ${JSON.stringify({ text: chunk })}\n\n`);
         }
-      } catch {
+        streamOk = true;
+      } catch (streamErr) {
+        console.error("AI stream error:", streamErr);
         res.write(`data: ${JSON.stringify({ text: "\n\nI'm sorry, I encountered an error. Please try again." })}\n\n`);
         res.end();
+        return;
+      }
+
+      if (!fullResponse.trim()) {
+        res.write(`data: ${JSON.stringify({ text: "\n\nNo response from AI provider." })}\n\n`);
+        res.end();
+        return;
       }
 
       session.messages.push({

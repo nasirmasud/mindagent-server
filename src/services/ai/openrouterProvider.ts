@@ -1,15 +1,16 @@
 import { AIProvider } from "./aiProvider.interface.js";
 
 const OR_API = "https://openrouter.ai/api/v1/chat/completions";
-const OR_KEY = process.env.OPENROUTER_API_KEY || "";
 
 export class OpenRouterProvider implements AIProvider {
+  private getKey() { return process.env.OPENROUTER_API_KEY || ""; }
+
   async generateText(prompt: string, maxTokens: number) {
     const res = await fetch(OR_API, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OR_KEY}`,
+        Authorization: `Bearer ${this.getKey()}`,
         "HTTP-Referer": "https://mindagent.ai",
       },
       body: JSON.stringify({
@@ -18,6 +19,10 @@ export class OpenRouterProvider implements AIProvider {
         max_tokens: maxTokens,
       }),
     });
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`OpenRouter API ${res.status}: ${errBody}`);
+    }
     const data: any = await res.json();
     return data.choices?.[0]?.message?.content || "";
   }
@@ -27,7 +32,7 @@ export class OpenRouterProvider implements AIProvider {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${OR_KEY}`,
+        Authorization: `Bearer ${this.getKey()}`,
         "HTTP-Referer": "https://mindagent.ai",
       },
       body: JSON.stringify({
@@ -36,6 +41,11 @@ export class OpenRouterProvider implements AIProvider {
         stream: true,
       }),
     });
+
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`OpenRouter API ${res.status}: ${errBody}`);
+    }
 
     const reader = res.body?.getReader();
     if (!reader) return;
