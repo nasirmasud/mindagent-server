@@ -1,4 +1,5 @@
 import { Router, Response } from "express";
+import * as XLSX from "xlsx";
 import { protect, AuthRequest } from "../middleware/protect.js";
 import { upload } from "../middleware/upload.js";
 import { parseFile } from "../services/data/fileParser.js";
@@ -109,6 +110,39 @@ router.get("/:id", protect, async (req: AuthRequest, res: Response) => {
     res.json({ success: true, analysis });
   } catch (err) {
     res.status(500).json({ success: false, message: "Failed to fetch analysis" });
+  }
+});
+
+router.get("/:id/report", protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const analysis = await DataAnalysis.findOne({ _id: req.params.id, userId: req.user!._id });
+    if (!analysis) {
+      res.status(404).json({ success: false, message: "Analysis not found" });
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+
+    const dataSheet = XLSX.utils.json_to_sheet(analysis.parsedPreview);
+    XLSX.utils.book_append_sheet(wb, dataSheet, "Data");
+
+    const insightsRows = [
+      { Section: "Summary", Content: analysis.aiInsights.summary },
+      ...analysis.aiInsights.trends.map((t) => ({ Section: "Trend", Content: t })),
+      ...analysis.aiInsights.risks.map((r) => ({ Section: "Risk", Content: r })),
+      ...analysis.aiInsights.kpis.map((k) => ({ Section: "KPI", Content: `${k.label}: ${k.value}` })),
+    ];
+    const insightsSheet = XLSX.utils.json_to_sheet(insightsRows);
+    XLSX.utils.book_append_sheet(wb, insightsSheet, "Insights");
+
+    const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="${analysis.fileName.replace(/\.[^.]+$/, "")}-analysis.xlsx"`);
+    res.send(buf);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Report generation failed" });
   }
 });
 
