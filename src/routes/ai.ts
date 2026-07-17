@@ -94,9 +94,7 @@ router.post(
         timestamp: new Date(),
       });
 
-      const history = session.messages
-        .filter((m) => m.role !== "system")
-        .map((m) => ({ role: m.role, content: m.content }));
+      const history = session.messages.map((m) => ({ role: m.role, content: m.content }));
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
@@ -112,6 +110,7 @@ router.post(
         }
       } catch {
         res.write(`data: ${JSON.stringify({ text: "\n\nI'm sorry, I encountered an error. Please try again." })}\n\n`);
+        res.end();
       }
 
       session.messages.push({
