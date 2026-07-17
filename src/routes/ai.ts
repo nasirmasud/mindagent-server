@@ -27,7 +27,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     try {
       const data = generateContentSchema.parse(req.body);
-      const provider = data.provider || "groq";
+      const provider = data.provider || "gemini";
       const ai = getAIProvider(provider);
 
       const template = PROMPT_TEMPLATES[data.contentType];
@@ -66,7 +66,7 @@ router.post(
   async (req: AuthRequest, res: Response) => {
     try {
       const data = chatSchema.parse(req.body);
-      const provider = data.provider || "groq";
+      const provider = data.provider || "gemini";
       const ai = getAIProvider(provider);
 
       let session = data.sessionId

@@ -1,0 +1,58 @@
+import { AIProvider } from "./aiProvider.interface.js";
+
+const OR_API = "https://openrouter.ai/api/v1/chat/completions";
+const OR_KEY = process.env.OPENROUTER_API_KEY || "";
+
+export class OpenRouterProvider implements AIProvider {
+  async generateText(prompt: string, maxTokens: number) {
+    const res = await fetch(OR_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OR_KEY}`,
+        "HTTP-Referer": "https://mindagent.ai",
+      },
+      body: JSON.stringify({
+        model: "openai/gpt-4o-mini",
+        messages: [{ role: "user", content: prompt }],
+        max_tokens: maxTokens,
+      }),
+    });
+    const data: any = await res.json();
+    return data.choices?.[0]?.message?.content || "";
+  }
+
+  async *streamChat(messages: { role: string; content: string }[]) {
+    const res = await fetch(OR_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${OR_KEY}`,
+        "HTTP-Referer": "https://mindagent.ai",
+      },
+      body: JSON.stringify({
+        model: "openai/gpt-4o-mini",
+        messages,
+        stream: true,
+      }),
+    });
+
+    const reader = res.body?.getReader();
+    if (!reader) return;
+    const decoder = new TextDecoder();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = decoder.decode(value);
+      for (const line of chunk.split("\n").filter((l) => l.startsWith("data: "))) {
+        try {
+          const json = JSON.parse(line.slice(6));
+          if (json.choices?.[0]?.delta?.content) {
+            yield json.choices[0].delta.content;
+          }
+        } catch {}
+      }
+    }
+  }
+}
