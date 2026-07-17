@@ -1,15 +1,15 @@
 import { AIProvider } from "./aiProvider.interface.js";
 import { GeminiProvider } from "./geminiProvider.js";
-import { OllamaProvider } from "./ollamaProvider.js";
+import { DeepSeekProvider } from "./deepseekProvider.js";
 import { HuggingFaceProvider } from "./huggingfaceProvider.js";
 import { OpenRouterProvider } from "./openrouterProvider.js";
 
-export type ProviderType = "gemini" | "ollama" | "huggingface" | "openrouter";
+export type ProviderType = "gemini" | "deepseek" | "huggingface" | "openrouter";
 
 export function getAIProvider(provider: ProviderType): AIProvider {
   switch (provider) {
-    case "ollama":
-      return new OllamaProvider();
+    case "deepseek":
+      return new DeepSeekProvider();
     case "huggingface":
       return new HuggingFaceProvider();
     case "openrouter":
