@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth.js";
 import agentRoutes from "./routes/agents.js";
 import aiRoutes from "./routes/ai.js";
 import itemRoutes from "./routes/items.js";
+import recommendationRoutes from "./routes/recommendations.js";
 import { errorHandler } from "./middleware/errorHandler.js";
 
 dotenv.config();
@@ -21,6 +22,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/agents", agentRoutes);
 app.use("/api/ai", aiRoutes);
 app.use("/api/items", itemRoutes);
+app.use("/api/recommendations", recommendationRoutes);
 
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
