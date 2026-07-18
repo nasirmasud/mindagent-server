@@ -1,22 +1,44 @@
 import mongoose, { Schema, Document } from "mongoose";
 
 export interface IItem extends Document {
-  title: string;
-  shortDesc: string;
-  fullDesc: string;
-  price: number;
-  imageUrl?: string;
   ownerId: mongoose.Types.ObjectId;
+  title: string;
+  shortDescription: string;
+  fullDescription: string;
+  sourceFileName: string;
+  sourceFileType: "csv" | "xlsx" | "json";
+  rowCount: number;
+  columns: string[];
+  parsedPreview: Record<string, unknown>[];
+  insights: {
+    summary: string;
+    trends: string[];
+    kpis: { label: string; value: string }[];
+    risks: string[];
+  };
+  chartData: { label: string; value: number }[];
+  status: "processing" | "completed" | "failed";
   createdAt: Date;
 }
 
 const ItemSchema = new Schema<IItem>({
-  title: { type: String, required: true },
-  shortDesc: { type: String, required: true },
-  fullDesc: { type: String, required: true },
-  price: { type: Number, required: true },
-  imageUrl: { type: String },
   ownerId: { type: Schema.Types.ObjectId, ref: "User", required: true },
+  title: { type: String, required: true },
+  shortDescription: { type: String, default: "" },
+  fullDescription: { type: String, default: "" },
+  sourceFileName: { type: String, required: true },
+  sourceFileType: { type: String, enum: ["csv", "xlsx", "json"], required: true },
+  rowCount: { type: Number, required: true },
+  columns: [{ type: String }],
+  parsedPreview: [{ type: Schema.Types.Mixed }],
+  insights: {
+    summary: { type: String, default: "" },
+    trends: { type: [String], default: [] },
+    kpis: { type: [{ label: String, value: String }], default: [] },
+    risks: { type: [String], default: [] },
+  },
+  chartData: { type: [{ label: String, value: Number }], default: [] },
+  status: { type: String, enum: ["processing", "completed", "failed"], default: "completed" },
   createdAt: { type: Date, default: Date.now },
 });
 
