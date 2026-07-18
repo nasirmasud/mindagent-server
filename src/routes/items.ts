@@ -212,29 +212,21 @@ router.post("/", protect, upload.single("file"), async (req: AuthRequest, res: R
   }
 });
 
-router.put("/:id", protect, async (req: AuthRequest, res: Response) => {
-  const item = await Item.findOneAndUpdate(
-    { _id: req.params.id, ownerId: req.user!._id },
-    req.body,
-    { new: true }
-  );
-  if (!item) {
-    res.status(404).json({ success: false, message: "Item not found" });
-    return;
-  }
-  res.json({ success: true, item });
-});
-
 router.delete("/:id", protect, async (req: AuthRequest, res: Response) => {
-  const item = await Item.findOneAndDelete({
-    _id: req.params.id,
-    ownerId: req.user!._id,
-  });
-  if (!item) {
-    res.status(404).json({ success: false, message: "Item not found" });
-    return;
+  try {
+    const item = await Item.findOneAndDelete({
+      _id: req.params.id,
+      ownerId: req.user!._id,
+    });
+    if (!item) {
+      res.status(404).json({ success: false, message: "Item not found" });
+      return;
+    }
+    res.json({ success: true, message: "Deleted" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to delete item" });
   }
-  res.json({ success: true, message: "Deleted" });
 });
 
 export default router;
