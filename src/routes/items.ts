@@ -1,4 +1,5 @@
 import { Router, Response } from "express";
+import * as XLSX from "xlsx";
 import Item from "../models/Item.js";
 import { protect, AuthRequest } from "../middleware/protect.js";
 import { upload } from "../middleware/upload.js";
@@ -226,6 +227,39 @@ router.delete("/:id", protect, async (req: AuthRequest, res: Response) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Failed to delete item" });
+  }
+});
+
+router.get("/:id/report", protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const item = await Item.findOne({ _id: req.params.id, ownerId: req.user!._id });
+    if (!item) {
+      res.status(404).json({ success: false, message: "Item not found" });
+      return;
+    }
+
+    const wb = XLSX.utils.book_new();
+
+    const dataSheet = XLSX.utils.json_to_sheet(item.parsedPreview);
+    XLSX.utils.book_append_sheet(wb, dataSheet, "Data");
+
+    const insightsRows = [
+      { Section: "Summary", Content: item.insights.summary },
+      ...item.insights.trends.map((t) => ({ Section: "Trend", Content: t })),
+      ...item.insights.risks.map((r) => ({ Section: "Risk", Content: r })),
+      ...item.insights.kpis.map((k) => ({ Section: "KPI", Content: `${k.label}: ${k.value}` })),
+    ];
+    const insightsSheet = XLSX.utils.json_to_sheet(insightsRows);
+    XLSX.utils.book_append_sheet(wb, insightsSheet, "Insights");
+
+    const buf = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
+
+    res.setHeader("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+    res.setHeader("Content-Disposition", `attachment; filename="${item.sourceFileName.replace(/\.[^.]+$/, "")}-analysis.xlsx"`);
+    res.send(buf);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Report generation failed" });
   }
 });
 
