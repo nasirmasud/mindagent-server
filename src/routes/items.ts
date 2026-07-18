@@ -22,9 +22,69 @@ Return a JSON object with these exact fields:
 - "chartData": array of {label: string, value: number} suitable for a bar chart (pick the most interesting numeric column, aggregate if needed, max 10 items)
 `;
 
-router.get("/", async (_req, res: Response) => {
-  const items = await Item.find().populate("ownerId", "name email");
-  res.json({ success: true, items });
+router.get("/", async (req, res: Response) => {
+  try {
+    const {
+      search,
+      fileType,
+      dateFrom,
+      dateTo,
+      sort = "newest",
+      page = "1",
+      limit = "12",
+    } = req.query as Record<string, string>;
+
+    const filter: Record<string, unknown> = {};
+
+    if (search) {
+      filter.$or = [
+        { title: { $regex: search, $options: "i" } },
+        { shortDescription: { $regex: search, $options: "i" } },
+      ];
+    }
+
+    if (fileType && ["csv", "xlsx", "json"].includes(fileType)) {
+      filter.sourceFileType = fileType;
+    }
+
+    if (dateFrom || dateTo) {
+      const dateFilter: Record<string, Date> = {};
+      if (dateFrom) dateFilter.$gte = new Date(dateFrom);
+      if (dateTo) dateFilter.$lte = new Date(dateTo);
+      filter.createdAt = dateFilter;
+    }
+
+    let sortOption: Record<string, 1 | -1> = { createdAt: -1 };
+    if (sort === "oldest") sortOption = { createdAt: 1 };
+    if (sort === "mostRows") sortOption = { rowCount: -1 };
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.min(50, Math.max(1, parseInt(limit, 10) || 12));
+    const skip = (pageNum - 1) * limitNum;
+
+    const [items, total] = await Promise.all([
+      Item.find(filter)
+        .populate("ownerId", "name email")
+        .sort(sortOption)
+        .skip(skip)
+        .limit(limitNum),
+      Item.countDocuments(filter),
+    ]);
+
+    res.json({
+      success: true,
+      items,
+      pagination: {
+        page: pageNum,
+        limit: limitNum,
+        total,
+        pages: Math.ceil(total / limitNum),
+      },
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to fetch items" });
+  }
 });
 
 router.get("/my", protect, async (req: AuthRequest, res: Response) => {
