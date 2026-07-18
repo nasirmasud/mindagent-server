@@ -22,7 +22,7 @@ const DataAnalysisSchema = new Schema<IDataAnalysis>({
   fileName: { type: String, required: true },
   fileType: { type: String, enum: ["csv", "xlsx", "json"], required: true },
   originalRowCount: { type: Number, required: true },
-  parsedPreview: { type: [Schema.Types.Mixed], default: [] },
+  parsedPreview: [{ type: Schema.Types.Mixed }],
   aiInsights: {
     summary: { type: String, default: "" },
     trends: { type: [String], default: [] },
