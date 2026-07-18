@@ -88,8 +88,14 @@ router.get("/", async (req, res: Response) => {
 });
 
 router.get("/my", protect, async (req: AuthRequest, res: Response) => {
-  const items = await Item.find({ ownerId: req.user!._id });
-  res.json({ success: true, items });
+  try {
+    const items = await Item.find({ ownerId: req.user!._id })
+      .sort({ createdAt: -1 });
+    res.json({ success: true, items });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to fetch your items" });
+  }
 });
 
 router.post("/", protect, upload.single("file"), async (req: AuthRequest, res: Response) => {
