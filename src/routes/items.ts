@@ -98,6 +98,29 @@ router.get("/my", protect, async (req: AuthRequest, res: Response) => {
   }
 });
 
+router.get("/:id", async (req, res: Response) => {
+  try {
+    const item = await Item.findById(req.params.id).populate("ownerId", "name email");
+    if (!item) {
+      res.status(404).json({ success: false, message: "Item not found" });
+      return;
+    }
+
+    const related = await Item.find({
+      _id: { $ne: item._id },
+      sourceFileType: item.sourceFileType,
+    })
+      .select("title shortDescription sourceFileName rowCount createdAt")
+      .limit(4)
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, item, related });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to fetch item" });
+  }
+});
+
 router.post("/", protect, upload.single("file"), async (req: AuthRequest, res: Response) => {
   try {
     if (!req.file) {
