@@ -12,12 +12,13 @@ const PROMPT_TEMPLATES: Record<string, string> = {
   blog: "Write a {tone} blog post about \"{topic}\". Length: {length} words. Use markdown formatting.",
   social: "Write a {tone} social media post about \"{topic}\". Length: {length} words. Use hashtags.",
   product: "Write a {tone} product description for \"{topic}\". Length: {length} words. Highlight features and benefits.",
+  docs: "Write a {tone} documentation entry for \"{topic}\". Length: {length} words. Use markdown formatting with headings and code examples.",
 };
 
 const LENGTH_MAP: Record<string, number> = {
-  short: 150,
-  medium: 400,
-  long: 800,
+  short: 120,
+  medium: 300,
+  long: 600,
 };
 
 router.post(
@@ -165,6 +166,25 @@ router.delete("/sessions/:id", protect, async (req: AuthRequest, res: Response) 
   });
   if (!session) {
     res.status(404).json({ success: false, message: "Session not found" });
+    return;
+  }
+  res.json({ success: true });
+});
+
+router.get("/history", protect, async (req: AuthRequest, res: Response) => {
+  const items = await GeneratedContent.find({ userId: req.user!._id })
+    .sort({ createdAt: -1 })
+    .limit(50);
+  res.json({ success: true, items });
+});
+
+router.delete("/history/:id", protect, async (req: AuthRequest, res: Response) => {
+  const item = await GeneratedContent.findOneAndDelete({
+    _id: req.params.id,
+    userId: req.user!._id,
+  });
+  if (!item) {
+    res.status(404).json({ success: false, message: "Item not found" });
     return;
   }
   res.json({ success: true });

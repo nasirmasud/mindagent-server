@@ -2,8 +2,8 @@ import { z } from "zod";
 
 export const generateContentSchema = z.object({
   topic: z.string().min(1).max(500),
-  contentType: z.enum(["blog", "social", "product"]),
-  tone: z.enum(["formal", "casual", "persuasive"]),
+  contentType: z.enum(["blog", "social", "product", "docs"]),
+  tone: z.enum(["professional", "friendly", "persuasive", "witty"]),
   length: z.enum(["short", "medium", "long"]),
 });
 
