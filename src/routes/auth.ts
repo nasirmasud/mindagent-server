@@ -21,9 +21,10 @@ router.post("/register", async (req: Request, res: Response) => {
       email: data.email,
       password: hashed,
       authProvider: "email",
+      ...(data.avatar ? { avatar: data.avatar } : {}),
     });
     const token = signToken(user._id.toString());
-    res.status(201).json({ success: true, token, user: { id: user._id, name: user.name, email: user.email } });
+    res.status(201).json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
   } catch (err: any) {
     if (err.name === "ZodError") {
       res.status(400).json({ success: false, errors: err.errors });
@@ -47,7 +48,7 @@ router.post("/login", async (req: Request, res: Response) => {
       return;
     }
     const token = signToken(user._id.toString());
-    res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email } });
+    res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
   } catch (err: any) {
     if (err.name === "ZodError") {
       res.status(400).json({ success: false, errors: err.errors });
@@ -68,7 +69,7 @@ router.post("/demo-login", async (_req: Request, res: Response) => {
       });
     }
     const token = signToken(user._id.toString());
-    res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email } });
+    res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error" });
   }
