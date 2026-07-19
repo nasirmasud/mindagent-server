@@ -121,20 +121,22 @@ router.post(
         return;
       }
 
-      session.messages.push({
-        role: "assistant",
-        content: fullResponse,
-        timestamp: new Date(),
-      });
-      await session.save();
-
       const match = fullResponse.match(/\[.*\]/s);
       let suggestions: string[] = [];
+      let cleanedResponse = fullResponse;
       if (match) {
         try {
           suggestions = JSON.parse(match[0]);
+          cleanedResponse = fullResponse.replace(/\[.*\]/s, "").trim();
         } catch {}
       }
+
+      session.messages.push({
+        role: "assistant",
+        content: cleanedResponse,
+        timestamp: new Date(),
+      });
+      await session.save();
 
       res.write(`data: ${JSON.stringify({ sessionId: session._id, done: true, suggestions })}\n\n`);
       res.end();
