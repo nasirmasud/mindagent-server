@@ -158,4 +158,16 @@ router.get("/sessions", protect, async (req: AuthRequest, res: Response) => {
   res.json({ success: true, sessions });
 });
 
+router.delete("/sessions/:id", protect, async (req: AuthRequest, res: Response) => {
+  const session = await ChatSession.findOneAndDelete({
+    _id: req.params.id,
+    userId: req.user!._id,
+  });
+  if (!session) {
+    res.status(404).json({ success: false, message: "Session not found" });
+    return;
+  }
+  res.json({ success: true });
+});
+
 export default router;
