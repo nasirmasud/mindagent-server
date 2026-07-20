@@ -7,6 +7,12 @@ export const generateContentSchema = z.object({
   length: z.enum(["short", "medium", "long"]),
 });
 
+export const analyzeImageSchema = z.object({
+  image: z.string().min(1, "Image data is required"),
+  imageName: z.string().optional(),
+  prompt: z.string().max(1000).optional(),
+});
+
 export const chatSchema = z.object({
   message: z.string().min(1).max(2000),
   sessionId: z.string().nullable().optional(),

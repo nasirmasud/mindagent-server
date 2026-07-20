@@ -1,10 +1,11 @@
 import { Router, Response } from "express";
 import { getAIProvider } from "../services/ai/aiProviderFactory.js";
-import { generateContentSchema, chatSchema } from "../validators/ai.js";
+import { generateContentSchema, chatSchema, analyzeImageSchema } from "../validators/ai.js";
 import { protect, AuthRequest } from "../middleware/protect.js";
 import { aiRateLimiter } from "../middleware/rateLimiter.js";
 import ChatSession from "../models/ChatSession.js";
 import GeneratedContent from "../models/GeneratedContent.js";
+import ImageAnalysis from "../models/ImageAnalysis.js";
 
 const router = Router();
 
@@ -58,6 +59,67 @@ router.post(
     }
   }
 );
+
+router.post(
+  "/analyze-image",
+  protect,
+  aiRateLimiter,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const data = analyzeImageSchema.parse(req.body);
+      const ai = getAIProvider();
+
+      const analysis = await ai.analyzeImage(data.image, data.prompt);
+
+      const record = await ImageAnalysis.create({
+        userId: req.user!._id,
+        imageData: data.image,
+        imageName: data.imageName || "untitled",
+        prompt: data.prompt || "",
+        analysis,
+      });
+
+      res.json({ success: true, analysis: record });
+    } catch (err: any) {
+      if (err.name === "ZodError") {
+        res.status(400).json({ success: false, errors: err.errors });
+        return;
+      }
+      console.error(err);
+      res.status(500).json({ success: false, message: "Image analysis failed" });
+    }
+  }
+);
+
+router.get("/image-history", protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const items = await ImageAnalysis.find({ userId: req.user!._id })
+      .select("imageName prompt analysis createdAt")
+      .sort({ createdAt: -1 })
+      .limit(50);
+    res.json({ success: true, items });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to fetch history" });
+  }
+});
+
+router.delete("/image-history/:id", protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const item = await ImageAnalysis.findOneAndDelete({
+      _id: req.params.id,
+      userId: req.user!._id,
+    });
+    if (!item) {
+      res.status(404).json({ success: false, message: "Analysis not found" });
+      return;
+    }
+    res.json({ success: true });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to delete" });
+  }
+});
 
 router.post(
   "/chat",

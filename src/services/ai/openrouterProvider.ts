@@ -27,6 +27,37 @@ export class OpenRouterProvider implements AIProvider {
     return data.choices?.[0]?.message?.content || "";
   }
 
+  async analyzeImage(imageBase64: string, prompt?: string) {
+    const userPrompt = prompt?.trim() || "Describe this image in detail. What objects, people, text, and scene do you see?";
+    const res = await fetch(OR_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.getKey()}`,
+        "HTTP-Referer": "https://mindagent.ai",
+      },
+      body: JSON.stringify({
+        model: "openai/gpt-4o",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: userPrompt },
+              { type: "image_url", image_url: { url: imageBase64 } },
+            ],
+          },
+        ],
+        max_tokens: 1000,
+      }),
+    });
+    if (!res.ok) {
+      const errBody = await res.text();
+      throw new Error(`OpenRouter vision API ${res.status}: ${errBody}`);
+    }
+    const data: any = await res.json();
+    return data.choices?.[0]?.message?.content || "";
+  }
+
   async *streamChat(messages: { role: string; content: string }[]) {
     const res = await fetch(OR_API, {
       method: "POST",
