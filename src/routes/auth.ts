@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import { signToken } from "../utils/jwt.js";
-import { registerSchema, loginSchema, googleSchema } from "../validators/auth.js";
+import { registerSchema, loginSchema, googleSchema, updateProfileSchema, changePasswordSchema } from "../validators/auth.js";
 import { protect, AuthRequest } from "../middleware/protect.js";
 import { authRateLimiter } from "../middleware/rateLimiter.js";
 
@@ -27,7 +27,7 @@ router.post("/register", async (req: Request, res: Response) => {
       ...(data.avatar ? { avatar: data.avatar } : {}),
     });
     const token = signToken(user._id.toString());
-    res.status(201).json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
+    res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar, authProvider: user.authProvider, createdAt: user.createdAt } });
   } catch (err: any) {
     if (err.name === "ZodError") {
       res.status(400).json({ success: false, errors: err.errors });
@@ -72,7 +72,7 @@ router.post("/demo-login", async (_req: Request, res: Response) => {
       });
     }
     const token = signToken(user._id.toString());
-    res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
+    res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar, authProvider: user.authProvider, createdAt: user.createdAt } });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error" });
   }
@@ -92,7 +92,7 @@ router.post("/google", async (req: Request, res: Response) => {
       });
     }
     const token = signToken(user._id.toString());
-    res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
+    res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar, authProvider: user.authProvider, createdAt: user.createdAt } });
   } catch (err: any) {
     if (err.name === "ZodError") {
       res.status(400).json({ success: false, errors: err.errors });
@@ -104,6 +104,49 @@ router.post("/google", async (req: Request, res: Response) => {
 
 router.get("/me", protect, (req: AuthRequest, res: Response) => {
   res.json({ success: true, user: req.user });
+});
+
+router.put("/me", protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const data = updateProfileSchema.parse(req.body);
+    const user = await User.findByIdAndUpdate(
+      req.user!._id,
+      { $set: data },
+      { new: true }
+    ).select("-password");
+    res.json({ success: true, user });
+  } catch (err: any) {
+    if (err.name === "ZodError") {
+      res.status(400).json({ success: false, errors: err.errors });
+      return;
+    }
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+router.put("/password", protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const data = changePasswordSchema.parse(req.body);
+    const user = await User.findById(req.user!._id);
+    if (!user || user.authProvider !== "email" || !user.password) {
+      res.status(400).json({ success: false, message: "Password change not available for this account" });
+      return;
+    }
+    const match = await bcrypt.compare(data.currentPassword, user.password);
+    if (!match) {
+      res.status(400).json({ success: false, message: "Current password is incorrect" });
+      return;
+    }
+    user.password = await bcrypt.hash(data.newPassword, 12);
+    await user.save();
+    res.json({ success: true, message: "Password updated" });
+  } catch (err: any) {
+    if (err.name === "ZodError") {
+      res.status(400).json({ success: false, errors: err.errors });
+      return;
+    }
+    res.status(500).json({ success: false, message: "Server error" });
+  }
 });
 
 export default router;
