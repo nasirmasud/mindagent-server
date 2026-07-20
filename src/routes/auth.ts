@@ -4,8 +4,11 @@ import User from "../models/User.js";
 import { signToken } from "../utils/jwt.js";
 import { registerSchema, loginSchema, googleSchema } from "../validators/auth.js";
 import { protect, AuthRequest } from "../middleware/protect.js";
+import { authRateLimiter } from "../middleware/rateLimiter.js";
 
 const router = Router();
+
+router.use(authRateLimiter);
 
 router.post("/register", async (req: Request, res: Response) => {
   try {
