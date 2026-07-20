@@ -13,15 +13,17 @@ const buildAnalysisPrompt = (rowCount: number, columns: string[], sampleCount: n
 Here is a sample (first ${sampleCount} rows):
 ${sampleJson}
 
-Return a JSON object with these exact fields:
-- "title": a short, descriptive title for this analysis report (max 8 words)
-- "shortDescription": one-sentence summary of what this data shows (max 20 words)
-- "fullDescription": a detailed narrative analysis of the data (3-5 sentences covering trends, patterns, and notable observations)
-- "summary": a concise one-paragraph summary of key findings
-- "trends": array of strings, each describing an identified trend
-- "kpis": array of {label: string, value: string} representing key metrics found
-- "risks": array of strings, each describing a potential risk or concern
-- "chartData": array of {label: string, value: number} suitable for a bar chart (pick the most interesting numeric column, aggregate if needed, max 10 items)`;
+Return ONLY valid JSON with NO comments, NO markdown formatting, and NO extra text. Use this exact structure:
+{
+  "title": "a short, descriptive title for this analysis report (max 8 words)",
+  "shortDescription": "one-sentence summary of what this data shows (max 20 words)",
+  "fullDescription": "a detailed narrative analysis of the data (3-5 sentences covering trends, patterns, and notable observations)",
+  "summary": "a concise one-paragraph summary of key findings",
+  "trends": ["array of strings, each describing an identified trend"],
+  "kpis": [{"label": "key metric name", "value": "key metric value"}],
+  "risks": ["array of strings, each describing a potential risk or concern"],
+  "chartData": [{"label": "category name", "value": 123}]
+}`;
 
   if (userPrompt?.trim()) {
     return `${base}
@@ -181,14 +183,18 @@ router.post("/", protect, upload.single("file"), async (req: AuthRequest, res: R
 
     let parsedAI;
     try {
-      const cleaned = output.replace(/```json|```/g, "").trim();
+      const cleaned = output
+        .replace(/```json|```/g, "")
+        .replace(/\/\/.*$/gm, "")
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        .trim();
       parsedAI = JSON.parse(cleaned);
     } catch {
       parsedAI = {
         title: `Analysis of ${req.file.originalname}`,
         shortDescription: `${parsed.rowCount} rows analyzed`,
-        fullDescription: output,
-        summary: output,
+        fullDescription: "AI analysis completed but the response could not be parsed into a structured report. View the data preview below for details.",
+        summary: "AI analysis completed but the response could not be parsed into a structured report. View the data preview below for details.",
         trends: [],
         kpis: [],
         risks: [],
