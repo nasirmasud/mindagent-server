@@ -2,6 +2,9 @@ import { Router, Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import User from "../models/User.js";
 import Item from "../models/Item.js";
+import ChatSession from "../models/ChatSession.js";
+import GeneratedContent from "../models/GeneratedContent.js";
+import ImageAnalysis from "../models/ImageAnalysis.js";
 import { signToken } from "../utils/jwt.js";
 import { registerSchema, loginSchema, googleSchema, updateProfileSchema, changePasswordSchema } from "../validators/auth.js";
 import { protect, AuthRequest } from "../middleware/protect.js";
@@ -164,6 +167,108 @@ router.post("/demo-login", async (_req: Request, res: Response) => {
     if (itemCount === 0) {
       const items = DEMO_ITEMS.map((r) => ({ ...r, ownerId: user!._id, status: "completed" as const }));
       await Item.insertMany(items);
+    }
+
+    const chatCount = await ChatSession.countDocuments({ userId: user._id });
+    if (chatCount === 0) {
+      const now = new Date();
+      await ChatSession.insertMany([
+        {
+          userId: user._id,
+          agentType: "assistant",
+          messages: [
+            { role: "system", content: "You are MindAgent Assistant.", timestamp: new Date(now.getTime() - 86400000 * 3) },
+            { role: "user", content: "Help me analyze Q3 sales data trends", timestamp: new Date(now.getTime() - 86400000 * 3 + 1000) },
+            { role: "assistant", content: "Based on your Q3 sales data, here are the key trends: North America leads with 38% growth, Electronics is the top category, and LATAM shows a slight decline. I'd recommend focusing on the APAC market expansion.", timestamp: new Date(now.getTime() - 86400000 * 3 + 2000) },
+          ],
+        },
+        {
+          userId: user._id,
+          agentType: "assistant",
+          messages: [
+            { role: "system", content: "You are MindAgent Assistant.", timestamp: new Date(now.getTime() - 86400000 * 2) },
+            { role: "user", content: "What strategies can reduce customer churn?", timestamp: new Date(now.getTime() - 86400000 * 2 + 1000) },
+            { role: "assistant", content: "Based on your churn analysis, here are 3 strategies: 1) Implement onboarding workflows for the 18-25 age group (22% churn). 2) Create proactive support outreach for zero-ticket accounts. 3) Add engagement triggers for low-login basic plan users.", timestamp: new Date(now.getTime() - 86400000 * 2 + 2000) },
+          ],
+        },
+        {
+          userId: user._id,
+          agentType: "assistant",
+          messages: [
+            { role: "system", content: "You are MindAgent Assistant.", timestamp: new Date(now.getTime() - 86400000) },
+            { role: "user", content: "Summarize the employee satisfaction results", timestamp: new Date(now.getTime() - 86400000 + 1000) },
+            { role: "assistant", content: "Your employee satisfaction survey shows an overall score of 7.8/10. Work-Life Balance is the strongest area (8.6/10), while Career Growth needs attention (6.2/10). Engineering is the most satisfied department at 8.4.", timestamp: new Date(now.getTime() - 86400000 + 2000) },
+          ],
+        },
+      ]);
+    }
+
+    const imageCount = await ImageAnalysis.countDocuments({ userId: user._id });
+    if (imageCount === 0) {
+      const now = new Date();
+      await ImageAnalysis.insertMany([
+        {
+          userId: user._id,
+          imageData: "",
+          imageName: "product-revenue-chart.png",
+          prompt: "Analyze the revenue trends in this chart",
+          analysis: "The bar chart shows quarterly revenue growth from Q1 to Q3 2025. Q3 shows the highest revenue at $1.2M, representing a 23% year-over-year increase. Electronics and North American markets are the primary growth drivers.",
+          tags: [{ label: "chart", conf: 0.95 }, { label: "revenue", conf: 0.9 }, { label: "quarterly", conf: 0.85 }],
+          dimensions: { width: 1200, height: 800 },
+          palette: ["#4f46e5", "#10b981", "#f59e0b", "#ef4444"],
+          createdAt: new Date(now.getTime() - 86400000 * 4),
+        },
+        {
+          userId: user._id,
+          imageData: "",
+          imageName: "churn-dashboard.png",
+          prompt: "What insights can you derive from this dashboard?",
+          analysis: "This dashboard displays customer churn metrics across demographics. The 18-25 age group shows the highest churn rate at 22%. Enterprise plan retention is excellent at 98%. The first 30 days is the critical retention window.",
+          tags: [{ label: "dashboard", conf: 0.92 }, { label: "churn", conf: 0.88 }, { label: "metrics", conf: 0.85 }],
+          dimensions: { width: 1920, height: 1080 },
+          palette: ["#6366f1", "#ec4899", "#14b8a6", "#f97316"],
+          createdAt: new Date(now.getTime() - 86400000 * 2),
+        },
+      ]);
+    }
+
+    const genCount = await GeneratedContent.countDocuments({ userId: user._id });
+    if (genCount === 0) {
+      const now = new Date();
+      await GeneratedContent.insertMany([
+        {
+          userId: user._id,
+          prompt: "Write a professional blog post about Q3 sales performance highlights",
+          output: "## Q3 2025 Sales Performance: A Quarter of Strong Growth\n\nQ3 2025 marked a significant milestone for our sales organization, delivering a 23% year-over-year revenue increase. North America and APAC regions led the charge, while the electronics category emerged as the clear winner with 38% growth.\n\n### Key Highlights\n- Total revenue reached $1.2M\n- Electronics category dominated with 38% growth\n- North America and APAC accounted for 71% of sales\n- Inventory turnover improved by 15%",
+          contentType: "blog",
+          provider: "openrouter",
+          createdAt: new Date(now.getTime() - 86400000 * 5),
+        },
+        {
+          userId: user._id,
+          prompt: "Write a persuasive social media post about customer retention strategies",
+          output: "Customer churn doesn't have to be inevitable. Here are 3 data-backed strategies that reduced churn by 40% for our clients:\n\n Onboarding flows for new users (reduces first-30-day churn by 60%)\n Proactive support for silent accounts\n Engagement triggers for low-activity users\n\n#CustomerRetention #SaaS #GrowthHacking #DataDriven",
+          contentType: "social",
+          provider: "openrouter",
+          createdAt: new Date(now.getTime() - 86400000 * 3),
+        },
+        {
+          userId: user._id,
+          prompt: "Write a friendly product description for the MindAgent analytics dashboard",
+          output: "Meet MindAgent Analytics — your AI-powered command center for business intelligence. Upload any CSV, Excel, or JSON file and get instant AI-generated insights, trends, and visualizations. No data science degree required. Simply drag, drop, and discover what your data is really telling you.",
+          contentType: "product",
+          provider: "openrouter",
+          createdAt: new Date(now.getTime() - 86400000 * 2),
+        },
+        {
+          userId: user._id,
+          prompt: "Write professional documentation for the MindAgent chat feature",
+          output: "# MindAgent AI Chat Assistant\n\n## Overview\nThe AI Chat Assistant is your always-available productivity partner. It understands your project context and helps with analysis, writing, brainstorming, and decision-making.\n\n## Features\n- **Streaming Responses**: See answers in real-time as they're generated\n- **Session History**: All conversations are saved for future reference\n- **Follow-up Suggestions**: Get AI-recommended next questions\n- **Multi-turn Context**: The assistant remembers your conversation history",
+          contentType: "docs",
+          provider: "openrouter",
+          createdAt: new Date(now.getTime() - 86400000),
+        },
+      ]);
     }
 
     const token = signToken(user._id.toString());
