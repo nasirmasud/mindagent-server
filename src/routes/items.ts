@@ -109,7 +109,7 @@ router.get("/my", protect, async (req: AuthRequest, res: Response) => {
   }
 });
 
-router.get("/:id", async (req, res: Response) => {
+router.get("/:id", protect, async (req: AuthRequest, res: Response) => {
   try {
     const item = await Item.findById(req.params.id).populate("ownerId", "name email");
     if (!item) {
@@ -129,6 +129,29 @@ router.get("/:id", async (req, res: Response) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: "Failed to fetch item" });
+  }
+});
+
+router.post("/manual", protect, async (req: AuthRequest, res: Response) => {
+  try {
+    const { title, shortDescription, fullDescription, priority, imageUrl } = req.body;
+    if (!title || !title.trim()) {
+      res.status(400).json({ success: false, message: "Title is required" });
+      return;
+    }
+    const item = await Item.create({
+      ownerId: req.user!._id,
+      title: title.trim(),
+      shortDescription: shortDescription || "",
+      fullDescription: fullDescription || "",
+      priority: priority || "medium",
+      imageUrl: imageUrl || "",
+      sourceFileType: "manual",
+    });
+    res.status(201).json({ success: true, item });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ success: false, message: "Failed to create item" });
   }
 });
 

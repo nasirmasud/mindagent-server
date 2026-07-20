@@ -6,7 +6,7 @@ export interface IItem extends Document {
   shortDescription: string;
   fullDescription: string;
   sourceFileName: string;
-  sourceFileType: "csv" | "xlsx" | "json";
+  sourceFileType: "csv" | "xlsx" | "json" | "manual";
   rowCount: number;
   columns: string[];
   parsedPreview: Record<string, unknown>[];
@@ -18,6 +18,8 @@ export interface IItem extends Document {
   };
   chartData: { label: string; value: number }[];
   status: "processing" | "completed" | "failed";
+  priority: "low" | "medium" | "high";
+  imageUrl: string;
   createdAt: Date;
 }
 
@@ -26,9 +28,9 @@ const ItemSchema = new Schema<IItem>({
   title: { type: String, required: true },
   shortDescription: { type: String, default: "" },
   fullDescription: { type: String, default: "" },
-  sourceFileName: { type: String, required: true },
-  sourceFileType: { type: String, enum: ["csv", "xlsx", "json"], required: true },
-  rowCount: { type: Number, required: true },
+  sourceFileName: { type: String, default: "" },
+  sourceFileType: { type: String, enum: ["csv", "xlsx", "json", "manual"], default: "manual" },
+  rowCount: { type: Number, default: 0 },
   columns: [{ type: String }],
   parsedPreview: [{ type: Schema.Types.Mixed }],
   insights: {
@@ -39,6 +41,8 @@ const ItemSchema = new Schema<IItem>({
   },
   chartData: { type: [{ label: String, value: Number }], default: [] },
   status: { type: String, enum: ["processing", "completed", "failed"], default: "completed" },
+  priority: { type: String, enum: ["low", "medium", "high"], default: "medium" },
+  imageUrl: { type: String, default: "" },
   createdAt: { type: Date, default: Date.now },
 });
 
