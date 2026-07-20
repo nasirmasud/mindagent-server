@@ -8,9 +8,10 @@ import { getAIProvider } from "../services/ai/aiProviderFactory.js";
 
 const router = Router();
 
-const ANALYSIS_PROMPT = `Analyze this dataset. It has {rowCount} rows. Columns: {columns}.
-Here is a sample (first {sampleCount} rows):
-{sampleJson}
+const buildAnalysisPrompt = (rowCount: number, columns: string[], sampleCount: number, sampleJson: string, userPrompt?: string) => {
+  const base = `Analyze this dataset. It has ${rowCount} rows. Columns: ${columns.join(", ")}.
+Here is a sample (first ${sampleCount} rows):
+${sampleJson}
 
 Return a JSON object with these exact fields:
 - "title": a short, descriptive title for this analysis report (max 8 words)
@@ -20,8 +21,17 @@ Return a JSON object with these exact fields:
 - "trends": array of strings, each describing an identified trend
 - "kpis": array of {label: string, value: string} representing key metrics found
 - "risks": array of strings, each describing a potential risk or concern
-- "chartData": array of {label: string, value: number} suitable for a bar chart (pick the most interesting numeric column, aggregate if needed, max 10 items)
-`;
+- "chartData": array of {label: string, value: number} suitable for a bar chart (pick the most interesting numeric column, aggregate if needed, max 10 items)`;
+
+  if (userPrompt?.trim()) {
+    return `${base}
+
+Additionally, the user has specifically asked you to focus on: ${userPrompt.trim()}
+Prioritize this aspect in your analysis.`;
+  }
+
+  return base;
+};
 
 router.get("/", async (req, res: Response) => {
   try {
@@ -139,12 +149,9 @@ router.post("/", protect, upload.single("file"), async (req: AuthRequest, res: R
 
     const fileType = mimeType === "text/csv" ? "csv" : mimeType.includes("spreadsheet") ? "xlsx" : "json";
 
+    const userPrompt = req.body?.prompt as string | undefined;
     const sample = parsed.rows.slice(0, 5);
-    const prompt = ANALYSIS_PROMPT
-      .replace("{rowCount}", String(parsed.rowCount))
-      .replace("{columns}", parsed.columns.join(", "))
-      .replace("{sampleCount}", String(sample.length))
-      .replace("{sampleJson}", JSON.stringify(sample, null, 2));
+    const prompt = buildAnalysisPrompt(parsed.rowCount, parsed.columns, sample.length, JSON.stringify(sample, null, 2), userPrompt);
 
     const ai = getAIProvider();
     const output = await ai.generateText(prompt, 1500);
