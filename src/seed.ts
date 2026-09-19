@@ -56,14 +56,14 @@ async function seed() {
       ],
       insights: {
         summary: "Q3 2025 shows strong overall growth at 23% YoY, led by Electronics (+38%) and North American market (+31%). Inventory efficiency improved 15%. Key risk: LATAM decline (-2%) and over-reliance on Electronics category (52% of total revenue).",
-        trends: ["Electronics category growing 38% YoY — dominant revenue driver", "North America + APAC account for 71% of total sales", "Discount rate inversely correlated with volume — full-price items sell better", "B2B Infrastructure segment showing steady 12% quarterly growth"],
+        trends: ["Electronics category growing 38% YoY - dominant revenue driver", "North America + APAC account for 71% of total sales", "Discount rate inversely correlated with volume - full-price items sell better", "B2B Infrastructure segment showing steady 12% quarterly growth"],
         kpis: [
           { label: "Total Revenue", value: "$1.2M" },
           { label: "YoY Growth", value: "23%" },
           { label: "Avg Order Value", value: "$312" },
           { label: "Top Region", value: "North America" },
         ],
-        risks: ["LATAM revenue declining 2% — currency headwinds", "Electronics concentration risk (52% of revenue)", "Discount rates above 10% eroding margins in EMEA", "Supply chain lead times increasing 3 days vs Q2"],
+        risks: ["LATAM revenue declining 2% - currency headwinds", "Electronics concentration risk (52% of revenue)", "Discount rates above 10% eroding margins in EMEA", "Supply chain lead times increasing 3 days vs Q2"],
       },
       chartData: [
         { label: "North America", value: 452000 },
@@ -75,7 +75,7 @@ async function seed() {
     },
     {
       title: "Customer Churn Risk Assessment",
-      shortDescription: "12% monthly churn rate identified — 3 key risk segments",
+      shortDescription: "12% monthly churn rate identified - 3 key risk segments",
       fullDescription: "Analysis of 50K customer records over 6 months reveals a 12% monthly churn rate, with 3 high-risk segments: users aged 18-25 (22% churn), accounts with zero support tickets (18% churn), and users on basic plans with less than 2 logins per week (15% churn). Retention efforts should prioritize onboarding engagement for new users and proactive support outreach for silent accounts. The predictive model identifies login frequency and support interaction as the strongest churn predictors.",
       sourceFileName: "customer-data-2025.json",
       sourceFileType: "json" as const,
@@ -95,14 +95,14 @@ async function seed() {
       ],
       insights: {
         summary: "12% monthly churn rate identified. Three high-risk segments: young users (18-25, 22% churn), zero-support-ticket accounts (18% churn), and low-engagement basic plan users (15% churn). Login frequency and support interaction are the strongest retention predictors.",
-        trends: ["Users aged 18-25 churn at 22% — highest risk demographic", "Zero support tickets correlates with 18% churn (vs 4% for 2+ tickets)", "Enterprise plan retention is 98% — highest loyalty segment", "First 30 days is the critical churn window (40% of churns occur in month 1)"],
+        trends: ["Users aged 18-25 churn at 22% - highest risk demographic", "Zero support tickets correlates with 18% churn (vs 4% for 2+ tickets)", "Enterprise plan retention is 98% - highest loyalty segment", "First 30 days is the critical churn window (40% of churns occur in month 1)"],
         kpis: [
           { label: "Monthly Churn", value: "12%" },
           { label: "At-Risk Users", value: "8,450" },
           { label: "Avg Lifetime", value: "14 months" },
           { label: "Enterprise Retention", value: "98%" },
         ],
-        risks: ["New user onboarding failure — 40% of churn within first 30 days", "Free tier users have near-zero engagement — conversion funnel weakness", "No automated re-engagement triggers for inactive accounts", "Support team bandwidth insufficient for proactive outreach"],
+        risks: ["New user onboarding failure - 40% of churn within first 30 days", "Free tier users have near-zero engagement - conversion funnel weakness", "No automated re-engagement triggers for inactive accounts", "Support team bandwidth insufficient for proactive outreach"],
       },
       chartData: [
         { label: "18-25", value: 22 },
@@ -114,7 +114,7 @@ async function seed() {
     },
     {
       title: "Employee Satisfaction Survey Analysis",
-      shortDescription: "Overall score 7.8/10 — Work-Life Balance rated highest",
+      shortDescription: "Overall score 7.8/10 - Work-Life Balance rated highest",
       fullDescription: "Analysis of 2,340 employee survey responses reveals an overall satisfaction score of 7.8/10. Work-Life Balance scored highest at 8.6/10, while Career Growth scored lowest at 6.2/10. Department-level analysis shows Engineering (8.4) and HR (8.1) as most satisfied, while Operations (6.8) and Sales (7.0) need attention. Open-ended comments highlight a desire for clearer promotion paths and more cross-team collaboration opportunities.",
       sourceFileName: "employee-survey-2025.xlsx",
       sourceFileType: "xlsx" as const,
@@ -134,14 +134,14 @@ async function seed() {
       ],
       insights: {
         summary: "Overall satisfaction: 7.8/10. Strengths: Work-Life Balance (8.6), Management (7.9). Weaknesses: Career Growth (6.2), Compensation (7.0). Engineering leads at 8.4; Operations needs improvement at 6.8. Key theme from comments: desire for clearer career progression paths.",
-        trends: ["Work-Life Balance consistently scores highest across all departments", "Engineering satisfaction increased 0.6 points vs last year — new remote policy working", "Career Growth scores dropped 0.4 points — promotion transparency concern", "Tenure correlates positively with satisfaction (+0.3 per year)"],
+        trends: ["Work-Life Balance consistently scores highest across all departments", "Engineering satisfaction increased 0.6 points vs last year - new remote policy working", "Career Growth scores dropped 0.4 points - promotion transparency concern", "Tenure correlates positively with satisfaction (+0.3 per year)"],
         kpis: [
           { label: "Overall Score", value: "7.8 / 10" },
           { label: "Top Department", value: "Engineering (8.4)" },
           { label: "Lowest Score", value: "Career Growth (6.2)" },
           { label: "Response Rate", value: "85%" },
         ],
-        risks: ["Career Growth score of 6.2 — top flight risk driver", "Operations department at 6.8 — 30% below company average", "Sales management score of 6.0 — manager training needed", "Tenure below 1 year segment scores 6.5 — onboarding experience gap"],
+        risks: ["Career Growth score of 6.2 - top flight risk driver", "Operations department at 6.8 - 30% below company average", "Sales management score of 6.0 - manager training needed", "Tenure below 1 year segment scores 6.5 - onboarding experience gap"],
       },
       chartData: [
         { label: "Engineering", value: 8.4 },
@@ -154,7 +154,7 @@ async function seed() {
     },
     {
       title: "Website Performance Metrics Analysis",
-      shortDescription: "Page load improved 40% after CDN migration — bounce rate down 12%",
+      shortDescription: "Page load improved 40% after CDN migration - bounce rate down 12%",
       fullDescription: "Analysis of 2.8M user sessions reveals significant performance improvements following the CDN migration in August. Average page load time dropped from 4.2s to 2.5s (40% improvement). Bounce rate decreased from 48% to 36%, with the largest gains on mobile devices (55% to 39%). Conversion rate improved from 2.1% to 3.4%. Desktop users continue to convert at higher rates (4.1%) compared to mobile (2.8%), but the gap is narrowing.",
       sourceFileName: "web-analytics-aug.csv",
       sourceFileType: "csv" as const,
@@ -174,14 +174,14 @@ async function seed() {
       ],
       insights: {
         summary: "CDN migration in mid-August improved page load time by 40% (4.2s → 2.5s). Bounce rate dropped 12 points (48% → 36%), with mobile seeing the biggest improvement. Conversion rate rose from 2.1% to 3.4%. Desktop still leads in conversion (4.1% vs 2.8%), but the gap is closing.",
-        trends: ["Page load time dropped 40% immediately after CDN migration — no regression", "Mobile bounce rate improved 16 points (55% → 39%) — best gain", "Conversion rate up 62% (2.1% → 3.4%) — strong business impact", "Organic traffic provides highest conversion rate at 3.8% across devices"],
+        trends: ["Page load time dropped 40% immediately after CDN migration - no regression", "Mobile bounce rate improved 16 points (55% → 39%) - best gain", "Conversion rate up 62% (2.1% → 3.4%) - strong business impact", "Organic traffic provides highest conversion rate at 3.8% across devices"],
         kpis: [
           { label: "Avg Load Time", value: "2.5s" },
           { label: "Bounce Rate", value: "36%" },
           { label: "Conversion Rate", value: "3.4%" },
           { label: "Monthly Sessions", value: "1.4M" },
         ],
-        risks: ["Mobile conversion still lags desktop by 1.3 points", "Paid traffic has highest bounce rate (41%) — ad/targeting audit needed", "Referral traffic declining 8% month-over-month", "Single CDN provider creates vendor lock-in risk"],
+        risks: ["Mobile conversion still lags desktop by 1.3 points", "Paid traffic has highest bounce rate (41%) - ad/targeting audit needed", "Referral traffic declining 8% month-over-month", "Single CDN provider creates vendor lock-in risk"],
       },
       chartData: [
         { label: "Before CDN", value: 4.2 },
