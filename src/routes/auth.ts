@@ -89,7 +89,7 @@ const DEMO_ITEMS = [
   },
   {
     title: "Customer Churn Risk Assessment",
-    shortDescription: "12% monthly churn rate identified — 3 key risk segments",
+    shortDescription: "12% monthly churn rate identified - 3 key risk segments",
     fullDescription: "Analysis of 50K customer records over 6 months reveals a 12% monthly churn rate, with 3 high-risk segments.",
     sourceFileName: "customer-data-2025.json",
     sourceFileType: "json" as const,
@@ -110,7 +110,7 @@ const DEMO_ITEMS = [
   },
   {
     title: "Employee Satisfaction Survey Analysis",
-    shortDescription: "Overall score 7.8/10 — Work-Life Balance rated highest",
+    shortDescription: "Overall score 7.8/10 - Work-Life Balance rated highest",
     fullDescription: "Analysis of 2,340 employee survey responses reveals an overall satisfaction score of 7.8/10.",
     sourceFileName: "employee-survey-2025.xlsx",
     sourceFileType: "xlsx" as const,
@@ -125,13 +125,13 @@ const DEMO_ITEMS = [
       summary: "Overall satisfaction: 7.8/10. Strengths: Work-Life Balance (8.6). Weaknesses: Career Growth (6.2).",
       trends: ["Work-Life Balance consistently scores highest", "Career Growth scores dropped 0.4 points"],
       kpis: [{ label: "Overall Score", value: "7.8 / 10" }, { label: "Top Department", value: "Engineering (8.4)" }, { label: "Response Rate", value: "85%" }],
-      risks: ["Career Growth score of 6.2 — top flight risk driver", "Operations department at 6.8"],
+      risks: ["Career Growth score of 6.2 - top flight risk driver", "Operations department at 6.8"],
     },
     chartData: [{ label: "Engineering", value: 8.4 }, { label: "HR", value: 8.1 }, { label: "Finance", value: 7.6 }, { label: "Sales", value: 7.0 }],
   },
   {
     title: "Website Performance Metrics Analysis",
-    shortDescription: "Page load improved 40% after CDN migration — bounce rate down 12%",
+    shortDescription: "Page load improved 40% after CDN migration - bounce rate down 12%",
     fullDescription: "Analysis of 2.8M user sessions reveals significant performance improvements following the CDN migration.",
     sourceFileName: "web-analytics-aug.csv",
     sourceFileType: "csv" as const,
@@ -255,7 +255,7 @@ router.post("/demo-login", async (_req: Request, res: Response) => {
         {
           userId: user._id,
           prompt: "Write a friendly product description for the MindAgent analytics dashboard",
-          output: "Meet MindAgent Analytics — your AI-powered command center for business intelligence. Upload any CSV, Excel, or JSON file and get instant AI-generated insights, trends, and visualizations. No data science degree required. Simply drag, drop, and discover what your data is really telling you.",
+          output: "Meet MindAgent Analytics - your AI-powered command center for business intelligence. Upload any CSV, Excel, or JSON file and get instant AI-generated insights, trends, and visualizations. No data science degree required. Simply drag, drop, and discover what your data is really telling you.",
           contentType: "product",
           provider: "openrouter",
           createdAt: new Date(now.getTime() - 86400000 * 2),
