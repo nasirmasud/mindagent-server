@@ -1,6 +1,7 @@
 import { Router, Request, Response } from "express";
 import bcrypt from "bcryptjs";
-import User from "../models/User.js";
+import { OAuth2Client, TokenPayload } from "google-auth-library";
+import User, { IUser, UserRole } from "../models/User.js";
 import Item from "../models/Item.js";
 import ChatSession from "../models/ChatSession.js";
 import GeneratedContent from "../models/GeneratedContent.js";
@@ -11,6 +12,40 @@ import { protect, AuthRequest } from "../middleware/protect.js";
 import { authRateLimiter } from "../middleware/rateLimiter.js";
 
 const router = Router();
+
+function demoLoginEnabled(): boolean {
+  return process.env.ENABLE_DEMO_LOGIN === "true";
+}
+
+// Public, unauthenticated, and deliberately outside the auth rate limiter: it
+// returns a single boolean and is needed before the user has a token.
+router.get("/config", (_req: Request, res: Response) => {
+  res.json({ success: true, demoEnabled: demoLoginEnabled() });
+});
+
+const googleClient = new OAuth2Client();
+
+export interface PublicUser {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+  authProvider: string;
+  role: UserRole;
+  createdAt: Date;
+}
+
+function toPublicUser(user: IUser): PublicUser {
+  return {
+    id: user._id.toString(),
+    name: user.name,
+    email: user.email,
+    avatar: user.avatar,
+    authProvider: user.authProvider,
+    role: user.role,
+    createdAt: user.createdAt,
+  };
+}
 
 router.use(authRateLimiter);
 
@@ -31,7 +66,7 @@ router.post("/register", async (req: Request, res: Response) => {
       ...(data.avatar ? { avatar: data.avatar } : {}),
     });
     const token = signToken(user._id.toString());
-    res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar, authProvider: user.authProvider, createdAt: user.createdAt } });
+    res.json({ success: true, token, user: toPublicUser(user) });
   } catch (err: any) {
     if (err.name === "ZodError") {
       res.status(400).json({ success: false, errors: err.errors });
@@ -44,7 +79,7 @@ router.post("/register", async (req: Request, res: Response) => {
 router.post("/login", async (req: Request, res: Response) => {
   try {
     const data = loginSchema.parse(req.body);
-    const user = await User.findOne({ email: data.email });
+    const user = await User.findOne({ email: data.email }).select("+password");
     if (!user || !user.password) {
       res.status(400).json({ success: false, message: "Invalid credentials" });
       return;
@@ -55,7 +90,7 @@ router.post("/login", async (req: Request, res: Response) => {
       return;
     }
     const token = signToken(user._id.toString());
-    res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar } });
+    res.json({ success: true, token, user: toPublicUser(user) });
   } catch (err: any) {
     if (err.name === "ZodError") {
       res.status(400).json({ success: false, errors: err.errors });
@@ -89,7 +124,7 @@ const DEMO_ITEMS = [
   },
   {
     title: "Customer Churn Risk Assessment",
-    shortDescription: "12% monthly churn rate identified — 3 key risk segments",
+    shortDescription: "12% monthly churn rate identified - 3 key risk segments",
     fullDescription: "Analysis of 50K customer records over 6 months reveals a 12% monthly churn rate, with 3 high-risk segments.",
     sourceFileName: "customer-data-2025.json",
     sourceFileType: "json" as const,
@@ -110,7 +145,7 @@ const DEMO_ITEMS = [
   },
   {
     title: "Employee Satisfaction Survey Analysis",
-    shortDescription: "Overall score 7.8/10 — Work-Life Balance rated highest",
+    shortDescription: "Overall score 7.8/10 - Work-Life Balance rated highest",
     fullDescription: "Analysis of 2,340 employee survey responses reveals an overall satisfaction score of 7.8/10.",
     sourceFileName: "employee-survey-2025.xlsx",
     sourceFileType: "xlsx" as const,
@@ -125,13 +160,13 @@ const DEMO_ITEMS = [
       summary: "Overall satisfaction: 7.8/10. Strengths: Work-Life Balance (8.6). Weaknesses: Career Growth (6.2).",
       trends: ["Work-Life Balance consistently scores highest", "Career Growth scores dropped 0.4 points"],
       kpis: [{ label: "Overall Score", value: "7.8 / 10" }, { label: "Top Department", value: "Engineering (8.4)" }, { label: "Response Rate", value: "85%" }],
-      risks: ["Career Growth score of 6.2 — top flight risk driver", "Operations department at 6.8"],
+      risks: ["Career Growth score of 6.2 - top flight risk driver", "Operations department at 6.8"],
     },
     chartData: [{ label: "Engineering", value: 8.4 }, { label: "HR", value: 8.1 }, { label: "Finance", value: 7.6 }, { label: "Sales", value: 7.0 }],
   },
   {
     title: "Website Performance Metrics Analysis",
-    shortDescription: "Page load improved 40% after CDN migration — bounce rate down 12%",
+    shortDescription: "Page load improved 40% after CDN migration - bounce rate down 12%",
     fullDescription: "Analysis of 2.8M user sessions reveals significant performance improvements following the CDN migration.",
     sourceFileName: "web-analytics-aug.csv",
     sourceFileType: "csv" as const,
@@ -153,6 +188,10 @@ const DEMO_ITEMS = [
 ];
 
 router.post("/demo-login", async (_req: Request, res: Response) => {
+  if (!demoLoginEnabled()) {
+    res.status(404).json({ success: false, message: "Not found" });
+    return;
+  }
   try {
     let user = await User.findOne({ email: "demo@mindagent.ai" });
     if (!user) {
@@ -255,7 +294,7 @@ router.post("/demo-login", async (_req: Request, res: Response) => {
         {
           userId: user._id,
           prompt: "Write a friendly product description for the MindAgent analytics dashboard",
-          output: "Meet MindAgent Analytics — your AI-powered command center for business intelligence. Upload any CSV, Excel, or JSON file and get instant AI-generated insights, trends, and visualizations. No data science degree required. Simply drag, drop, and discover what your data is really telling you.",
+          output: "Meet MindAgent Analytics - your AI-powered command center for business intelligence. Upload any CSV, Excel, or JSON file and get instant AI-generated insights, trends, and visualizations. No data science degree required. Simply drag, drop, and discover what your data is really telling you.",
           contentType: "product",
           provider: "openrouter",
           createdAt: new Date(now.getTime() - 86400000 * 2),
@@ -272,7 +311,7 @@ router.post("/demo-login", async (_req: Request, res: Response) => {
     }
 
     const token = signToken(user._id.toString());
-    res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar, authProvider: user.authProvider, createdAt: user.createdAt } });
+    res.json({ success: true, token, user: toPublicUser(user) });
   } catch (err) {
     res.status(500).json({ success: false, message: "Server error" });
   }
@@ -280,19 +319,49 @@ router.post("/demo-login", async (_req: Request, res: Response) => {
 
 router.post("/google", async (req: Request, res: Response) => {
   try {
-    const data = googleSchema.parse(req.body);
-    let user = await User.findOne({ email: data.email });
+    const { credential } = googleSchema.parse(req.body);
+
+    const clientId = process.env.GOOGLE_CLIENT_ID;
+    if (!clientId) {
+      res.status(500).json({ success: false, message: "Google auth not configured" });
+      return;
+    }
+
+    let payload: TokenPayload | undefined;
+    try {
+      const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: clientId });
+      payload = ticket.getPayload();
+    } catch {
+      res.status(401).json({ success: false, message: "Invalid Google token" });
+      return;
+    }
+
+    if (!payload?.sub || !payload.email || payload.email_verified !== true) {
+      res.status(401).json({ success: false, message: "Google account email is not verified" });
+      return;
+    }
+
+    let user = await User.findOne({ googleId: payload.sub });
+    if (!user) {
+      user = await User.findOne({ email: payload.email });
+      if (user) {
+        user.googleId = payload.sub;
+        if (payload.picture) user.avatar = payload.picture;
+        await user.save();
+      }
+    }
     if (!user) {
       user = await User.create({
-        name: data.name,
-        email: data.email,
-        googleId: data.googleId,
-        avatar: data.avatar,
+        name: payload.name || payload.email.split("@")[0],
+        email: payload.email,
+        googleId: payload.sub,
+        avatar: payload.picture,
         authProvider: "google",
       });
     }
+
     const token = signToken(user._id.toString());
-    res.json({ success: true, token, user: { id: user._id, name: user.name, email: user.email, avatar: user.avatar, authProvider: user.authProvider, createdAt: user.createdAt } });
+    res.json({ success: true, token, user: toPublicUser(user) });
   } catch (err: any) {
     if (err.name === "ZodError") {
       res.status(400).json({ success: false, errors: err.errors });
@@ -303,18 +372,32 @@ router.post("/google", async (req: Request, res: Response) => {
 });
 
 router.get("/me", protect, (req: AuthRequest, res: Response) => {
-  res.json({ success: true, user: req.user });
+  res.json({ success: true, user: toPublicUser(req.user!) });
 });
 
 router.put("/me", protect, async (req: AuthRequest, res: Response) => {
   try {
     const data = updateProfileSchema.parse(req.body);
+
+    // Explicit allowlist rather than `$set: data`. Zod strips unknown keys by
+    // default, but that is an implicit guarantee: switching the schema to
+    // .passthrough() for any reason would turn this into a privilege-escalation
+    // path. Copying named fields keeps the boundary regardless of schema config.
+    const update: Record<string, unknown> = {};
+    if (data.name !== undefined) update.name = data.name;
+    if (data.avatar !== undefined) update.avatar = data.avatar;
+
     const user = await User.findByIdAndUpdate(
       req.user!._id,
-      { $set: data },
-      { new: true }
+      { $set: update },
+      { new: true, runValidators: true }
     ).select("-password");
-    res.json({ success: true, user });
+
+    if (!user) {
+      res.status(404).json({ success: false, message: "User not found" });
+      return;
+    }
+    res.json({ success: true, user: toPublicUser(user) });
   } catch (err: any) {
     if (err.name === "ZodError") {
       res.status(400).json({ success: false, errors: err.errors });
@@ -327,7 +410,7 @@ router.put("/me", protect, async (req: AuthRequest, res: Response) => {
 router.put("/password", protect, async (req: AuthRequest, res: Response) => {
   try {
     const data = changePasswordSchema.parse(req.body);
-    const user = await User.findById(req.user!._id);
+    const user = await User.findById(req.user!._id).select("+password");
     if (!user || user.authProvider !== "email" || !user.password) {
       res.status(400).json({ success: false, message: "Password change not available for this account" });
       return;
