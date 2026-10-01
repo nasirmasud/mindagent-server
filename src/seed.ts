@@ -7,24 +7,41 @@ import { config } from "dotenv";
 config();
 
 const MONGO_URI = process.env.MONGO_URI || "mongodb://localhost:27017/mindagent";
+const DEMO_EMAIL = "demo@mindagent.ai";
+const BCRYPT_COST = 12;
 
 async function seed() {
+  const demoPassword = process.env.SEED_DEMO_PASSWORD;
+  if (!demoPassword) {
+    throw new Error(
+      "SEED_DEMO_PASSWORD is not set. The demo account password must be supplied explicitly - " +
+        "add it to server/.env (see .env.example). There is no default."
+    );
+  }
+
   await mongoose.connect(MONGO_URI);
   console.log("Connected to MongoDB");
 
-  const demoUser = await User.findOne({ email: "demo@mindagent.ai" });
-  if (!demoUser) {
+  // Reset on every run so the demo account always matches configuration. Without
+  // this, an account created by POST /auth/demo-login (which sets no password)
+  // would leave SEED_DEMO_PASSWORD permanently unapplied.
+  const hashed = await bcrypt.hash(demoPassword, BCRYPT_COST);
+
+  let user = await User.findOne({ email: DEMO_EMAIL });
+  if (!user) {
     console.log("Creating demo user...");
-    const hashed = await bcrypt.hash("demo123", 10);
-    await User.create({
+    user = await User.create({
       name: "Demo User",
-      email: "demo@mindagent.ai",
+      email: DEMO_EMAIL,
       password: hashed,
       authProvider: "email",
     });
+  } else {
+    user.password = hashed;
+    await user.save();
+    console.log("Reset existing demo user password to match SEED_DEMO_PASSWORD.");
   }
-  const user = await User.findOne({ email: "demo@mindagent.ai" })!;
-  console.log(`Using user: ${user!.email}`);
+  console.log(`Using user: ${user.email}`);
 
   const existing = await Item.countDocuments();
   if (existing > 0) {
@@ -198,7 +215,6 @@ async function seed() {
     ownerId: user!._id,
     status: "completed" as const,
   }));
-
   await Item.insertMany(items);
   console.log(`Seeded ${items.length} sample reports for demo user.`);
 
