@@ -360,9 +360,12 @@ router.post("/google", authRateLimiter, async (req: Request, res: Response) => {
     if (!user) {
       user = await User.findOne({ email: payload.email });
       if (user) {
-        user.googleId = payload.sub;
-        if (payload.picture) user.avatar = payload.picture;
-        await user.save();
+        const link: Record<string, unknown> = { googleId: payload.sub };
+        if (payload.picture) link.avatar = payload.picture;
+        // Scoped update instead of user.save(). save() revalidates every path on
+        // the document, so a stale value in any unrelated field (preferredProvider,
+        // authProvider) breaks sign-in even though nothing there is being written.
+        await User.updateOne({ _id: user._id }, { $set: link }, { runValidators: true });
       }
     }
     if (!user) {
@@ -443,8 +446,9 @@ router.put("/password", protect, async (req: AuthRequest, res: Response) => {
       res.status(400).json({ success: false, message: "Current password is incorrect" });
       return;
     }
-    user.password = await bcrypt.hash(data.newPassword, 12);
-    await user.save();
+    // Scoped update instead of user.save(), for the same reason as the Google
+    // link above: only the password field should be validated, not the document.
+    await User.updateOne({ _id: user._id }, { $set: { password: await bcrypt.hash(data.newPassword, 12) } });
     res.json({ success: true, message: "Password updated" });
   } catch (err: any) {
     if (err.name === "ZodError") {
