@@ -74,6 +74,10 @@ router.post("/register", authRateLimiter, async (req: Request, res: Response) =>
       res.status(400).json({ success: false, errors: err.errors });
       return;
     }
+    // Schema validation failures, duplicate keys and driver errors all land here.
+    // Without this the client only ever sees "Server error" and the real cause is
+    // never recorded anywhere, so the failure cannot be diagnosed after the fact.
+    console.error("[auth] unhandled error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
@@ -98,6 +102,10 @@ router.post("/login", authRateLimiter, async (req: Request, res: Response) => {
       res.status(400).json({ success: false, errors: err.errors });
       return;
     }
+    // Schema validation failures, duplicate keys and driver errors all land here.
+    // Without this the client only ever sees "Server error" and the real cause is
+    // never recorded anywhere, so the failure cannot be diagnosed after the fact.
+    console.error("[auth] unhandled error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
@@ -315,6 +323,7 @@ router.post("/demo-login", authRateLimiter, async (_req: Request, res: Response)
     const token = signToken(user._id.toString());
     res.json({ success: true, token, user: toPublicUser(user) });
   } catch (err) {
+    console.error("[auth/demo-login] unhandled error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
@@ -373,6 +382,10 @@ router.post("/google", authRateLimiter, async (req: Request, res: Response) => {
       res.status(400).json({ success: false, errors: err.errors });
       return;
     }
+    // Schema validation failures, duplicate keys and driver errors all land here.
+    // Without this the client only ever sees "Server error" and the real cause is
+    // never recorded anywhere, so the failure cannot be diagnosed after the fact.
+    console.error("[auth] unhandled error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
@@ -409,6 +422,10 @@ router.put("/me", protect, async (req: AuthRequest, res: Response) => {
       res.status(400).json({ success: false, errors: err.errors });
       return;
     }
+    // Schema validation failures, duplicate keys and driver errors all land here.
+    // Without this the client only ever sees "Server error" and the real cause is
+    // never recorded anywhere, so the failure cannot be diagnosed after the fact.
+    console.error("[auth] unhandled error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
@@ -434,6 +451,10 @@ router.put("/password", protect, async (req: AuthRequest, res: Response) => {
       res.status(400).json({ success: false, errors: err.errors });
       return;
     }
+    // Schema validation failures, duplicate keys and driver errors all land here.
+    // Without this the client only ever sees "Server error" and the real cause is
+    // never recorded anywhere, so the failure cannot be diagnosed after the fact.
+    console.error("[auth] unhandled error:", err);
     res.status(500).json({ success: false, message: "Server error" });
   }
 });
