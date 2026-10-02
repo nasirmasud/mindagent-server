@@ -17,6 +17,11 @@ dotenv.config();
 
 const app = express();
 
+// Render, like every PaaS, terminates TLS and forwards the real visitor address in
+// X-Forwarded-For. Without this `req.ip` is the proxy's address for every request, so
+// per-IP rate limiting collapses into one global bucket that any user can exhaust.
+app.set("trust proxy", 1);
+
 app.use(helmet());
 const allowedOrigins = (process.env.CLIENT_URL || "http://localhost:3000")
   .split(",")
