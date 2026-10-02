@@ -47,9 +47,11 @@ function toPublicUser(user: IUser): PublicUser {
   };
 }
 
-router.use(authRateLimiter);
-
-router.post("/register", async (req: Request, res: Response) => {
+// Rate limiting is attached per route rather than with a blanket `router.use`, so it
+// only covers the routes that consume credentials. Token-bearing routes such as `/me`
+// already require a verified JWT; sharing one 20-request bucket with them lets routine
+// session refreshes exhaust the limit and lock every user out of signing in.
+router.post("/register", authRateLimiter, async (req: Request, res: Response) => {
   try {
     const data = registerSchema.parse(req.body);
     const existing = await User.findOne({ email: data.email });
@@ -76,7 +78,7 @@ router.post("/register", async (req: Request, res: Response) => {
   }
 });
 
-router.post("/login", async (req: Request, res: Response) => {
+router.post("/login", authRateLimiter, async (req: Request, res: Response) => {
   try {
     const data = loginSchema.parse(req.body);
     const user = await User.findOne({ email: data.email }).select("+password");
@@ -187,7 +189,7 @@ const DEMO_ITEMS = [
   },
 ];
 
-router.post("/demo-login", async (_req: Request, res: Response) => {
+router.post("/demo-login", authRateLimiter, async (_req: Request, res: Response) => {
   if (!demoLoginEnabled()) {
     res.status(404).json({ success: false, message: "Not found" });
     return;
@@ -317,7 +319,7 @@ router.post("/demo-login", async (_req: Request, res: Response) => {
   }
 });
 
-router.post("/google", async (req: Request, res: Response) => {
+router.post("/google", authRateLimiter, async (req: Request, res: Response) => {
   try {
     const { credential } = googleSchema.parse(req.body);
 
@@ -331,7 +333,11 @@ router.post("/google", async (req: Request, res: Response) => {
     try {
       const ticket = await googleClient.verifyIdToken({ idToken: credential, audience: clientId });
       payload = ticket.getPayload();
-    } catch {
+    } catch (err) {
+      // An audience mismatch, an expired token, an unreachable JWK endpoint and a
+      // malformed token all land here, and they are fixed in four different places.
+      // Reporting one opaque 401 for all of them makes the flow undebuggable.
+      console.error("[auth/google] verifyIdToken failed:", err);
       res.status(401).json({ success: false, message: "Invalid Google token" });
       return;
     }
